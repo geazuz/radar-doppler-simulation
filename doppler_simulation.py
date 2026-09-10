@@ -20,9 +20,9 @@ print(f"Target velocity: {target_velocity:.1f} m/s")
 print(f"Doppler shift: {doppler_f:.2f} Hz")
 
 # singal sampling parameters
-sample_rate = 20_000 # 20,000 samples/sec
+sample_rate = 20_000 # 20,000 samples/sec (fs)
 
-duration = 0.01 # units = seconds 
+duration = 0.01 # units = seconds (T) 
 
 # starts at 0 seconds, stops at 0.01 seconds, and creates a point every 1/20,000 seconds
 time = np.arange(0, duration, 1/ sample_rate) # creates an array of time samples, 1/20,000 = 0.00005 s
@@ -30,11 +30,55 @@ time = np.arange(0, duration, 1/ sample_rate) # creates an array of time samples
 # evaluates the x(t) function
 doppler_signal = np.sin(2 * np.pi * doppler_f * time) # generates simulated doppler return, x(t)=sin(2pifd*t)
 
-plt.plot(time, doppler_signal) # plots the created simulated signal
+# 1. computing doppler_signals FFT -- 
+    # the FFT
+fft_output = np.fft.rfft(doppler_signal) 
 
+    # asks python "how many samples are actually in this signal?"
+number_of_samples_N = len(doppler_signal) # tried number_of_samples_N = sample_rate * duration first = 20,000 * 0.01 = 200
+
+    # delta_f 
+frequency_resolution = sample_rate / number_of_samples_N
+
+# 2. Creating corresponding array of frequency bins --  
+
+    # requires N, & d = time between samples, tells us where each frequency is
+frequency_bins = np.fft.rfftfreq(number_of_samples_N, d=1/sample_rate)
+
+# 3. determining which frequency ahs the largest FFT Magnitude -- 
+
+    # "how strong is this frequency component?" tells how strong each frequency is
+FFT_magnitude = np.abs(fft_output)
+
+    # determine which index in FFT_magnitude contains the largest values
+MAX_magnitude_index = np.argmax(FFT_magnitude)
+
+# 4. The detected doppler frequency
+    #
+detected_frequency = frequency_bins[MAX_magnitude_index]
+
+# 5. Estimating target velocity 
+    #  
+estimated_velocity = (detected_frequency * wavelength) / 2
+
+# 6. Prints both the known velocity and esitmated velocity 
+print(number_of_samples_N)
+print(frequency_resolution)
+print(frequency_bins[:20])
+print(MAX_magnitude_index)
+print(detected_frequency)
+print(f"Estimated Velocity: {estimated_velocity:.1f} m/s")
+
+plt.plot(time, doppler_signal) # plots the created simulated signal
 plt.xlabel("Time (s)")
 plt.ylabel("Amplitude")
 plt.title("Simulated Doppler Radar Return")
+# plt.grid()
+plt.show()
 
-plt.grid()
+# 7. Plot FFT Magnitude vs. Frequency
+plt.plot(frequency_bins, FFT_magnitude)
+plt.xlabel("Frequency")
+plt.ylabel("FFT Magnitude")
+plt.title("FFT vs. Frequency")
 plt.show()
