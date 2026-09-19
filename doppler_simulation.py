@@ -1,7 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def calculate_received_power(target_range): 
+    received_power = (Pt * antenna_gain**2 * wavelength**2 * sigma) / ((4*np.pi)**3 * target_range**4 * system_losses)
+    return received_power
+
+
 plt.style.use("dark_background")
+
+# Constants & Parameters
 
 c = 3.0e8 # speed of light in m/s
 
@@ -13,6 +20,19 @@ wavelength = c / carrier_f # calculates wavelength
 
 doppler_f = (2 * target_velocity) / wavelength # calculates doppler frequency shift (radar doppler relationship), true doppler frequency
 # = fd
+
+# transmit power (W)
+Pt = 1
+
+# Gain (G) 
+antenna_gain = 10
+
+# Radar cross section (RCS) (m^2)
+sigma = 1 
+
+# L 
+system_losses = 1
+
 
 print(f"Radar frequency: {carrier_f / 1e9:.1f} GHz")
 print(f"Wavelength: {wavelength:.4f} m")
@@ -94,3 +114,23 @@ percent_error = (absolute_error / (abs(target_velocity))) * 100
 
 print(f"Absolute Error = {absolute_error: .2f} m/s")
 print(f"Percent Error = {percent_error: .3f}%")
+
+# R (m)
+# target_range = 100 
+# received_power = (Pt * antenna_gain**2 * wavelength**2 * sigma) / ((4*np.pi)**3 * target_range**4 * system_losses)
+
+# print(f"Received Power = {received_power: .3e} W")
+
+received_power_100m = calculate_received_power(100)
+print(f"received_power_100m = {received_power_100m: .3e} W")
+
+# R (m)
+# target_range = 200 
+# received_power = (Pt * antenna_gain**2 * wavelength**2 * sigma) / ((4*np.pi)**3 * target_range**4 * system_losses)
+
+received_power_200m = calculate_received_power(200)
+print(f"received power at 200m = {received_power_200m: .3e} W")
+
+# physics lesson here, doubling the range reduced the received power by 16x (didn't merely make the received signal a "little weaker")
+ratio_of_recieved_power = received_power_100m / received_power_200m
+print(f"Power Ratio = {ratio_of_recieved_power: .3e}")
