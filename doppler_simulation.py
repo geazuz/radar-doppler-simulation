@@ -1,8 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def calculate_received_power(target_range): 
-    received_power = (Pt * antenna_gain**2 * wavelength**2 * sigma) / ((4*np.pi)**3 * target_range**4 * system_losses)
+def calculate_atm_loss(target_range): 
+    # added atmospheric attenuation to the radar-equation part of sim
+
+    range_km = target_range / 1000 # convert target (R) to km
+
+    to_target_and_back_distance = 2 * range_km # radar travels to target and back 
+
+    total_atm_attenuation = attenuation_val * to_target_and_back_distance # total atmospherica loss in dB
+
+    atm_loss_linear = 10**(total_atm_attenuation / 10) # convert dB to a linear power-loss factor = Latm
+    return atm_loss_linear
+
+def calculate_received_power(target_range, atm_loss_linear=1): 
+    received_power = (Pt * antenna_gain**2 * wavelength**2 * sigma) / ((4*np.pi)**3 * target_range**4 * system_losses * atm_loss_linear)
     return received_power
 
 
@@ -30,8 +42,10 @@ antenna_gain = 10
 # Radar cross section (RCS) (m^2)
 sigma = 1 
 
-# L 
+# L (system)
 system_losses = 1
+
+attenuation_val = 0.1 # dB/km
 
 
 print(f"Radar frequency: {carrier_f / 1e9:.1f} GHz")
@@ -134,3 +148,31 @@ print(f"received power at 200m = {received_power_200m: .3e} W")
 # physics lesson here, doubling the range reduced the received power by 16x (didn't merely make the received signal a "little weaker")
 ratio_of_recieved_power = received_power_100m / received_power_200m
 print(f"Power Ratio = {ratio_of_recieved_power: .3e}")
+
+
+target_ranges = np.arange(10, 510, 10) # (start, stop, step) can't start a zero since it would be 1/inf due to R^-4
+# print(target_ranges)
+
+multiple_received_power = calculate_received_power(target_ranges) 
+
+# Received Power (Pr) is proportional too 1/R^4 or R^-4
+plt.plot(target_ranges, multiple_received_power)
+plt.xlabel("Range (m)")
+plt.xscale("log")
+plt.ylabel("Received Power (W)")
+plt.yscale("log")
+plt.title("1/R^4 Falloff Visualization")
+plt.show()
+
+atm_loss_5km = calculate_atm_loss(5000) # target range = 5km 
+
+power_no_atm = calculate_received_power(5000, 1) # Latm = 1 (no-atmosphere case)
+
+power_w_atm = calculate_received_power(5000, atm_loss_5km) 
+
+P_ratio = power_no_atm / power_w_atm 
+
+print(f"Atmopshere Loss = {atm_loss_5km: .3f}")
+print(f"No Atmopshere Loss Case = {power_no_atm: .3e} W")
+print(f"Received Power with Atmopshere Loss = {power_w_atm: .3e} W")
+print(f"Received Power Ratio with both losses = {P_ratio: .3e}")
